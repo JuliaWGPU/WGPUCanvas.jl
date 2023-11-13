@@ -82,7 +82,7 @@ function defaultCanvas(::Type{GLFWLinuxCanvas}; windowSize = (500, 500))
         nothing,
         initMouse(MouseState),
     )
-    getContext(canvas)
+    WGPUCore.getContext(canvas)
     setJoystickCallback(canvas)
     setMonitorCallback(canvas)
     setWindowCloseCallback(canvas)
@@ -118,7 +118,7 @@ mutable struct GPUCanvasContext <: AbstractWGPUCanvasContext
     logicalSize::Any
 end
 
-function getContext(gpuCanvas::GLFWLinuxCanvas)
+function WGPUCore.getContext(gpuCanvas::GLFWLinuxCanvas)
     if gpuCanvas.context == nothing
         context = GPUCanvasContext(
             Ref(gpuCanvas),
@@ -128,7 +128,7 @@ function getContext(gpuCanvas::GLFWLinuxCanvas)
             nothing,
             gpuCanvas.device,
             WGPUTextureFormat_R8Unorm,
-            WGPUTextureUsage(0),
+            WGPUCore.getEnum(WGPUTextureUsage, ["RenderAttachment", "CopySrc"]),
             nothing,
             nothing,
             gpuCanvas.size,
@@ -141,7 +141,7 @@ function getContext(gpuCanvas::GLFWLinuxCanvas)
     end
 end
 
-function configure(
+function WGPUCore.configure(
     canvasContext::GPUCanvasContext;
     device,
     format,
@@ -150,7 +150,7 @@ function configure(
     compositingAlphaMode,
     size,
 )
-    unconfig(canvasContext)
+    WGPUCore.unconfig(canvasContext)
     canvasContext.device = device
     canvasContext.format = format
     canvasContext.usage = usage
@@ -158,7 +158,7 @@ function configure(
     canvasContext.size = size
 end
 
-function unconfigure(canvasContext::GPUCanvasContext)
+function WGPUCore.unconfigure(canvasContext::GPUCanvasContext)
     canvasContext.device = nothing
     canvasContext.format = nothing
     canvasContext.usage = nothing
@@ -166,7 +166,7 @@ function unconfigure(canvasContext::GPUCanvasContext)
     canvasContext.size = nothing
 end
 
-function determineSize(cntxt::GPUCanvasContext)
+function WGPUCore.determineSize(cntxt::GPUCanvasContext)
     pixelRatio = GLFW.GetWindowContentScale(cntxt.canvasRef[].windowRef[]) |> first
     psize = GLFW.GetFramebufferSize(cntxt.canvasRef[].windowRef[])
     cntxt.pixelRatio = pixelRatio
@@ -176,11 +176,11 @@ function determineSize(cntxt::GPUCanvasContext)
 end
 
 
-function getPreferredFormat(canvas::GLFWLinuxCanvas)
+function WGPUCore.getPreferredFormat(canvas::GLFWLinuxCanvas)
     return WGPUCore.getEnum(WGPUTextureFormat, "BGRA8Unorm")
 end
 
-function getPreferredFormat(canvasContext::GPUCanvasContext)
+function WGPUCore.getPreferredFormat(canvasContext::GPUCanvasContext)
     canvas = canvasCntxt.canvasRef[]
     if canvas != nothing
         return getPreferredFormat(canvas)
@@ -192,7 +192,7 @@ function getSurfaceIdFromCanvas(cntxt::GPUCanvasContext)
     # TODO return cntxt
 end
 
-function getCurrentTexture(cntxt::GPUCanvasContext)
+function WGPUCore.getCurrentTexture(cntxt::GPUCanvasContext)
 	# TODO this expensive so commenting it. Only first run though
     # if cntxt.device.internal[] == C_NULL
         # @error "context must be configured before request for texture"
@@ -202,16 +202,16 @@ function getCurrentTexture(cntxt::GPUCanvasContext)
         id = wgpuSwapChainGetCurrentTextureView(cntxt.internal[]) |> Ref
         size = (cntxt.surfaceSize..., 1)
         cntxt.currentTexture =
-            GPUTextureView("swap chain", id, cntxt.device, nothing, size, nothing |> Ref)
+            WGPUCore.GPUTextureView("swap chain", id, cntxt.device, nothing, size, nothing |> Ref)
     end
     return cntxt.currentTexture
 end
 
-function present(cntxt::GPUCanvasContext)
+function WGPUCore.present(cntxt::GPUCanvasContext)
     if cntxt.internal[] != C_NULL && cntxt.currentTexture.internal[] != C_NULL
         wgpuSwapChainPresent(cntxt.internal[])
     end
-    destroy(cntxt.currentTexture)
+    WGPUCore.destroy(cntxt.currentTexture)
     cntxt.currentTexture = nothing
 end
 
@@ -244,7 +244,7 @@ function createNativeSwapChainMaybe(canvasCntxt::GPUCanvasContext)
         ) |> Ref
 end
 
-function destroyWindow(canvas::GLFWLinuxCanvas)
+function WGPUCore.destroyWindow(canvas::GLFWLinuxCanvas)
     GLFW.DestroyWindow(canvas.windowRef[])
 end
 

@@ -5,6 +5,9 @@ using WGPUNative
 using WGPUCore
 using WGPUCore: AbstractWGPUCanvas, AbstractWGPUCanvasContext
 #using WGPUCore: WGPUTextureFormat, WGPUTextureUsage, WGPUSurface
+using Preferences
+using Libdl
+using Libglvnd_jll
 
 include("offscreen.jl")
 
@@ -12,6 +15,10 @@ if Sys.isapple()
     include("events.jl")
     include("metalglfw.jl")
 elseif Sys.islinux()
+	libEGL_path = dlpath("libEGL")
+	if libEGL_path !== ""
+		set_preferences!(Libglvnd_jll, "libEGL_path" => libEGL_path)
+	end
     include("events.jl")
     include("linuxglfw.jl")
 elseif Sys.iswindows()

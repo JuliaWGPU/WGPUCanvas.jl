@@ -48,7 +48,7 @@ mutable struct GLFWMacCanvas <: AbstractWGPUCanvas
     requestDrawTimerRunning::Any
     changingPixelRatio::Any
     isMinimized::Bool
-    device::Union{GPUDevice, Nothing}
+    device::Union{WGPUCore.GPUDevice, Nothing}
     context::Any
     drawFunc::Any
     mouseState::Any
@@ -103,7 +103,7 @@ function defaultCanvas(::Type{GLFWMacCanvas}; size = (500, 500))
         nothing,
         initMouse(MouseState),
     )
-    getContext(canvas)
+    WGPUCore.getContext(canvas)
     setJoystickCallback(canvas)
     setMonitorCallback(canvas)
     setWindowCloseCallback(canvas)
@@ -147,7 +147,7 @@ end
             # compositingAlphaMode = nothing,
 
 
-function getContext(gpuCanvas::GLFWMacCanvas)
+function WGPUCore.getContext(gpuCanvas::GLFWMacCanvas)
     if gpuCanvas.context == nothing
         context = GPUCanvasContext(
 			Ref(gpuCanvas),		    	# canvasRef::Ref{GLFWMacCanvas}
@@ -157,7 +157,7 @@ function getContext(gpuCanvas::GLFWMacCanvas)
 			nothing,				    # currentTexture::Any
 			gpuCanvas.device,		    # device::Any
 			WGPUTextureFormat(0),		# format::WGPUTextureFormat
-			WGPUTextureUsage(0),		# usage::WGPUTextureUsage
+			WGPUTextureUsage_RenderAttachment,		# usage::WGPUTextureUsage
 			nothing,				    # compositingAlphaMode::Any
 			nothing,				    # size::Any
 			gpuCanvas.size,			    # physicalSize::Any
@@ -171,24 +171,7 @@ function getContext(gpuCanvas::GLFWMacCanvas)
 end
 
 
-function config(a::T; args...) where {T}
-    fields = fieldnames(typeof(a))
-    for pair in args
-        if pair.first in fields
-            setproperty!(a, pair.first, pair.second)
-        else
-            @error "Cannot set field $pair. Check if its a valid field for $T"
-        end
-    end
-end
-
-function unconfig(a::T) where {T}
-    for field in fieldnames(T)
-        setproperty!(a, field, defaultInit(fieldtype(T, field)))
-    end
-end
-
-function configure(
+function WGPUCore.configure(
     canvasContext::GPUCanvasContext;
     device,
     format,
@@ -205,7 +188,7 @@ function configure(
     canvasContext.size = size
 end
 
-function unconfigure(canvasContext::GPUCanvasContext)
+function WGPUCore.unconfigure(canvasContext::GPUCanvasContext)
     canvasContext.device = nothing
     canvasContext.format = nothing
     canvasContext.usage = nothing
@@ -213,7 +196,7 @@ function unconfigure(canvasContext::GPUCanvasContext)
     canvasContext.size = nothing
 end
 
-function determineSize(cntxt::GPUCanvasContext)
+function WGPUCore.determineSize(cntxt::GPUCanvasContext)
     pixelRatio = GLFW.GetWindowContentScale(cntxt.canvasRef[].windowRef[]) |> first
     psize = GLFW.GetFramebufferSize(cntxt.canvasRef[].windowRef[])
     cntxt.pixelRatio = pixelRatio
@@ -223,11 +206,11 @@ function determineSize(cntxt::GPUCanvasContext)
 end
 
 
-function getPreferredFormat(canvas::GLFWMacCanvas)
+function WGPUCore.getPreferredFormat(canvas::GLFWMacCanvas)
     return WGPUCore.getEnum(WGPUTextureFormat, "BGRA8Unorm")
 end
 
-function getPreferredFormat(canvasContext::GPUCanvasContext)
+function WGPUCore.getPreferredFormat(canvasContext::GPUCanvasContext)
     canvas = canvasCntxt.canvasRef[]
     if canvas != nothing
         return getPreferredFormat(canvas)
@@ -239,7 +222,7 @@ function getSurfaceIdFromCanvas(cntxt::GPUCanvasContext)
     # TODO return cntxt
 end
 
-function getCurrentTexture(cntxt::GPUCanvasContext)
+function WGPUCore.getCurrentTexture(cntxt::GPUCanvasContext)
 	# TODO this expensive so commenting it. Only first run though
     # if cntxt.device.internal[] == C_NULL
         # @error "context must be configured before request for texture"
@@ -249,16 +232,16 @@ function getCurrentTexture(cntxt::GPUCanvasContext)
         id = wgpuSwapChainGetCurrentTextureView(cntxt.internal[]) |> Ref
         size = (cntxt.surfaceSize..., 1)
         cntxt.currentTexture =
-            GPUTextureView("swap chain", id, cntxt.device, nothing, size, nothing |> Ref)
+            WGPUCore.GPUTextureView("swap chain", id, cntxt.device, nothing, size, nothing |> Ref)
     end
     return cntxt.currentTexture
 end
 
-function present(cntxt::GPUCanvasContext)
+function WGPUCore.present(cntxt::GPUCanvasContext)
     if cntxt.internal[] != C_NULL && cntxt.currentTexture.internal[] != C_NULL
         wgpuSwapChainPresent(cntxt.internal[])
     end
-    destroy(cntxt.currentTexture)
+    WGPUCore.destroy(cntxt.currentTexture)
     cntxt.currentTexture = nothing
 end
 
@@ -291,7 +274,7 @@ function createNativeSwapChainMaybe(canvasCntxt::GPUCanvasContext)
         ) |> Ref
 end
 
-function destroyWindow(canvas::GLFWMacCanvas)
+function WGPUCore.destroyWindow(canvas::GLFWMacCanvas)
     GLFW.DestroyWindow(canvas.windowRef[])
 end
 

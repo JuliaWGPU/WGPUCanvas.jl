@@ -52,7 +52,7 @@ function setWindowSizeCallback(canvas::AbstractWGPUCanvas, f = nothing)
         callback = (_, w, h) -> begin
             println("window size : $w $h")
             canvas.size = (w, h)
-            determineSize(canvas.context)
+            WGPUCore.determineSize(canvas.context)
         end
     else
         callback = f

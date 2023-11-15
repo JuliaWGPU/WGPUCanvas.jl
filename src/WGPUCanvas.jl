@@ -15,7 +15,12 @@ if Sys.isapple()
     include("events.jl")
     include("metalglfw.jl")
 elseif Sys.islinux()
-	libEGL_path = dlpath("libEGL")
+    libEGL_path = ""
+    try
+    	libEGL_path = dlpath("libEGL")
+    catch e
+        @warn "System level libEGL library is not found !!!"
+    end
 	if libEGL_path !== ""
 		set_preferences!(Libglvnd_jll, "libEGL_path" => libEGL_path)
 	end

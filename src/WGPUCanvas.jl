@@ -1,4 +1,4 @@
-module WGPUGUI
+module WGPUCanvas
 
 export getCanvas
 using WGPUNative
@@ -44,4 +44,4 @@ function WGPUCore.getCanvas(s::Symbol)
 end
 
 
-end # module WGPUGUI
+end # module WGPUCanvas

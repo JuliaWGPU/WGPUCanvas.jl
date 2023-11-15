@@ -1,5 +1,5 @@
 ```@meta
-CurrentModule = WGPUgfx
+CurrentModule = WGPUCanvas
 ```
 
 # WGPUCanvas

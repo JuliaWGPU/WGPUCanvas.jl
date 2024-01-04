@@ -158,7 +158,7 @@ function WGPUCore.getContext(gpuCanvas::GLFWMacCanvas)
 			gpuCanvas.device,		    # device::Any
 			WGPUTextureFormat(0),		# format::WGPUTextureFormat
 			WGPUTextureUsage_RenderAttachment,		# usage::WGPUTextureUsage
-			nothing,				    # compositingAlphaMode::Any
+			WGPUCompositeAlphaMode_PreMultiplied,				    # compositingAlphaMode::Any
 			nothing,				    # size::Any
 			gpuCanvas.size,			    # physicalSize::Any
 			nothing,	    			# pixelRatio::Any
@@ -186,6 +186,7 @@ function WGPUCore.configure(
     canvasContext.usage = usage
     canvasContext.compositingAlphaMode = compositingAlphaMode
     canvasContext.size = size
+    
 end
 
 function WGPUCore.unconfigure(canvasContext::GPUCanvasContext)
@@ -254,6 +255,12 @@ function createNativeSwapChainMaybe(canvasCntxt::GPUCanvasContext)
     canvasCntxt.surfaceSize = pSize
     canvasCntxt.usage = WGPUTextureUsage_RenderAttachment
     presentMode = WGPUPresentMode_Fifo
+    swapChainExtras = cStruct(
+    	WGPUSwapChainDescriptorExtras;
+    	alphaMode=WGPUCompositeAlphaMode_PreMultiplied,
+    	viewFormatCount=1,
+    	viewFormats = [canvasCntxt.format] |> pointer
+    )
     swapChain =
         cStruct(
             WGPUSwapChainDescriptor;
@@ -262,6 +269,7 @@ function createNativeSwapChainMaybe(canvasCntxt::GPUCanvasContext)
             width = max(1, pSize[1]),
             height = max(1, pSize[2]),
             presentMode = presentMode,
+            nextInChain=swapChainExtras |> ptr
         )
     if canvasCntxt.surfaceId == nothing
         canvasCntxt.surfaceId = getSurfaceIdFromCanvas(canvas)

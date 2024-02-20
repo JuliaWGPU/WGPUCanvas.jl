@@ -122,7 +122,7 @@ function WGPUCore.getContext(gpuCanvas::GLFWWinCanvas)
             gpuCanvas.device,            # device::Any
             WGPUTextureFormat_R8Unorm,   # format::WGPUTextureFormat
             WGPUCore.getEnum(WGPUTextureUsage, ["RenderAttachment", "CopySrc"]),         # usage::WGPUTextureUsage
-            nothing,                     # compositingAlphaMode::Any
+            WGPUCompositeAlphaMode_PreMultiplied,                     # compositingAlphaMode::Any
             nothing,                     # size::Any
             gpuCanvas.size,              # physicalSize::Any
             nothing,                     # pixelRatio::Any
@@ -216,7 +216,13 @@ function createNativeSwapChainMaybe(canvasCntxt::GPUCanvasContext)
     end
     canvasCntxt.surfaceSize = pSize
     canvasCntxt.usage = WGPUCore.getEnum(WGPUTextureUsage, ["RenderAttachment", "CopySrc"])
-    presentMode = WGPUPresentMode_Immediate # TODO hardcoded (for other options ref https://docs.rs/wgpu/latest/wgpu/enum.PresentMode.html)
+    presentMode = WGPUPresentMode_Fifo # TODO hardcoded (for other options ref https://docs.rs/wgpu/latest/wgpu/enum.PresentMode.html)
+    swapChainExtras = cStruct(
+        WGPUSwapChainDescriptorExtras;
+        alphaMode=WGPUCompositeAlphaMode_PreMultiplied,
+        viewFormatCount=1,
+        viewFormats = [canvasCntxt.format] |> pointer
+    )
     swapChain =
         cStruct(
             WGPUSwapChainDescriptor;
@@ -225,6 +231,7 @@ function createNativeSwapChainMaybe(canvasCntxt::GPUCanvasContext)
             width = max(1, pSize[1]),
             height = max(1, pSize[2]),
             presentMode = presentMode,
+            nextInChain = swapChainExtras |> ptr
         )
     if canvasCntxt.surfaceId == nothing
         canvasCntxt.surfaceId = getSurfaceIdFromCanvas(canvas)

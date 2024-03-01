@@ -248,7 +248,7 @@ function configureSurface(canvasCntxt::GPUCanvasContext)
         canvasCntxt.surfaceId = getSurfaceIdFromCanvas(canvas)
     end
     wgpuSurfaceConfigure(
-        canvas.surfaceRef[],,
+        canvas.surfaceRef[],
         surfaceConfiguration |> ptr,
     )
 end

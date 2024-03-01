@@ -206,7 +206,7 @@ end
 
 function WGPUCore.present(cntxt::GPUCanvasContext)
 	canvas = cntxt.canvasRef[]
-    if cntxt.internal[] != C_NULL && cntxt.currentTexture.internal[] != C_NULL
+    if cntxt.currentTexture.internal[] != C_NULL
         wgpuSurfacePresent(canvas.surfaceRef[])
     end
     WGPUCore.destroy(cntxt.currentTexture)
@@ -232,7 +232,7 @@ function configureSurface(canvasCntxt::GPUCanvasContext)
 
     surfaceConfiguration =
         cStruct(
-            WGPUSwapChainDescriptor;
+            WGPUSurfaceConfiguration;
             device = canvasCntxt.device.internal[],
             usage = canvasCntxt.usage,
             format = canvasCntxt.format,

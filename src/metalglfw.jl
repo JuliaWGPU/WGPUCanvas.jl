@@ -158,7 +158,7 @@ function WGPUCore.getContext(gpuCanvas::GLFWMacCanvas)
 			gpuCanvas.device,		    # device::Any
 			WGPUTextureFormat(0),		# format::WGPUTextureFormat
 			WGPUTextureUsage_RenderAttachment,		# usage::WGPUTextureUsage
-			WGPUCompositeAlphaMode_PreMultiplied,				    # compositingAlphaMode::Any
+			WGPUCompositeAlphaMode_Premultiplied,				    # compositingAlphaMode::Any
 			nothing,				    # size::Any
 			gpuCanvas.size,			    # physicalSize::Any
 			nothing,	    			# pixelRatio::Any
@@ -228,25 +228,33 @@ function WGPUCore.getCurrentTexture(cntxt::GPUCanvasContext)
     # if cntxt.device.internal[] == C_NULL
         # @error "context must be configured before request for texture"
     # end
+    canvas = cntxt.canvasRef[]
+    surface = canvas.surfaceRef[]
+    surfaceTexture = cStruct(
+    	WGPUSurfaceTexture;
+    )
+    
     if cntxt.currentTexture == nothing
-        createNativeSwapChainMaybe(cntxt)
-        id = wgpuSwapChainGetCurrentTextureView(cntxt.internal[]) |> Ref
+        configureSurface(cntxt)
+        wgpuSurfaceGetCurrentTexture(surface, surfaceTexture|>ptr)
         size = (cntxt.surfaceSize..., 1)
+        currentTexture = wgpuTextureCreateView(surfaceTexture.texture, C_NULL) |> Ref
         cntxt.currentTexture =
-            WGPUCore.GPUTextureView("swap chain", id, cntxt.device, nothing, size, nothing |> Ref)
+            WGPUCore.GPUTextureView("swap chain", currentTexture, cntxt.device, nothing, size, nothing |> Ref)
     end
     return cntxt.currentTexture
 end
 
 function WGPUCore.present(cntxt::GPUCanvasContext)
-    if cntxt.internal[] != C_NULL && cntxt.currentTexture.internal[] != C_NULL
-        wgpuSwapChainPresent(cntxt.internal[])
+	canvas = cntxt.canvasRef[]
+    if cntxt.currentTexture.internal[] != C_NULL
+        wgpuSurfacePresent(canvas.surfaceRef[])
     end
     WGPUCore.destroy(cntxt.currentTexture)
     cntxt.currentTexture = nothing
 end
 
-function createNativeSwapChainMaybe(canvasCntxt::GPUCanvasContext)
+function configureSurface(canvasCntxt::GPUCanvasContext)
     canvas = canvasCntxt.canvasRef[]
     pSize = canvasCntxt.physicalSize
     if pSize == canvasCntxt.surfaceSize
@@ -255,31 +263,44 @@ function createNativeSwapChainMaybe(canvasCntxt::GPUCanvasContext)
     canvasCntxt.surfaceSize = pSize
     canvasCntxt.usage = WGPUTextureUsage_RenderAttachment
     presentMode = WGPUPresentMode_Fifo
-    swapChainExtras = cStruct(
-    	WGPUSwapChainDescriptorExtras;
-    	alphaMode=WGPUCompositeAlphaMode_PreMultiplied,
-    	viewFormatCount=1,
-    	viewFormats = [canvasCntxt.format] |> pointer
+
+    surfaceCapabilities = cStruct(
+    	WGPUSurfaceCapabilities;
     )
-    swapChain =
+
+    wgpuSurfaceGetCapabilities(
+    	canvas.surfaceRef[], 
+    	canvas.device.internal[],
+    	surfaceCapabilities |> ptr
+   	)
+    
+    #swapChainExtras = cStruct(
+    #	WGPUSurfaceCapabilities;
+    #	alphaMode=WGPUCompositeAlphaMode_Premultiplied,
+    #	viewFormatCount=1,
+    #	viewFormats = [canvasCntxt.format] |> pointer
+    #)
+    surfaceConfiguration =
         cStruct(
-            WGPUSwapChainDescriptor;
+            WGPUSurfaceConfiguration;
+            device = canvasCntxt.device.internal[],
             usage = canvasCntxt.usage,
             format = canvasCntxt.format,
+            viewFormatCount=1,
+            viewFormats = [canvasCntxt.format] |> pointer,
+            alphaMode=WGPUCompositeAlphaMode_Opaque,
             width = max(1, pSize[1]),
             height = max(1, pSize[2]),
             presentMode = presentMode,
-            nextInChain=swapChainExtras |> ptr
+            nextInChain=C_NULL
         )
     if canvasCntxt.surfaceId == nothing
         canvasCntxt.surfaceId = getSurfaceIdFromCanvas(canvas)
     end
-    canvasCntxt.internal =
-        wgpuDeviceCreateSwapChain(
-            canvasCntxt.device.internal[],
-            canvasCntxt.surfaceId,
-            swapChain |> ptr,
-        ) |> Ref
+    wgpuSurfaceConfigure(
+        canvas.surfaceRef[],
+        surfaceConfiguration |> ptr,
+    )
 end
 
 function WGPUCore.destroyWindow(canvas::GLFWMacCanvas)

@@ -230,10 +230,7 @@ function WGPUCore.getCurrentTexture(cntxt::GPUCanvasContext)
     # end
     canvas = cntxt.canvasRef[]
     surface = canvas.surfaceRef[]
-    surfaceTexture = cStruct(
-    	WGPUSurfaceTexture;
-    )
-    
+    surfaceTexture = cStruct(WGPUSurfaceTexture;)
     if cntxt.currentTexture == nothing
         configureSurface(cntxt)
         wgpuSurfaceGetCurrentTexture(surface, surfaceTexture|>ptr)
@@ -274,12 +271,6 @@ function configureSurface(canvasCntxt::GPUCanvasContext)
     	surfaceCapabilities |> ptr
    	)
     
-    #swapChainExtras = cStruct(
-    #	WGPUSurfaceCapabilities;
-    #	alphaMode=WGPUCompositeAlphaMode_Premultiplied,
-    #	viewFormatCount=1,
-    #	viewFormats = [canvasCntxt.format] |> pointer
-    #)
     surfaceConfiguration =
         cStruct(
             WGPUSurfaceConfiguration;

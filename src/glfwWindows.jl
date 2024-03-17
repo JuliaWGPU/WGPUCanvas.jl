@@ -30,8 +30,7 @@ mutable struct GLFWWinCanvas <: AbstractWGPUCanvas
     mouseState::Any
 end
 
-
-function defaultCanvas(::Type{GLFWWinCanvas}; size = (500, 500))
+function defaultCanvas(::Type{GLFWWinCanvas}, size::Tuple{Int, Int})
     windowRef = Ref{GLFW.Window}()
     surfaceRef = Ref{WGPUSurface}()
     title = "GLFW WIN32 Window"

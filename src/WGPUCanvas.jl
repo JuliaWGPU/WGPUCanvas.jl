@@ -31,22 +31,24 @@ elseif Sys.iswindows()
     include("glfwWindows.jl")
 end
 
+struct ErrorCanvas <: AbstractWGPUCanvas end
 
-function WGPUCore.getCanvas(s::Symbol)
-    if s==:OFFSCREEN
-        return defaultCanvas(OffscreenCanvas)
+function WGPUCore.getCanvas(s::Symbol, size::Tuple{Int, Int} = (500,500))
+    canv = if s==:OFFSCREEN
+        OffscreenCanvas
     elseif s==:GLFW
         if Sys.iswindows()
-            return defaultCanvas(GLFWWinCanvas)
+            GLFWWinCanvas
         elseif Sys.isapple()
-            return defaultCanvas(GLFWMacCanvas)
+            GLFWMacCanvas
         elseif Sys.islinux()
-            return defaultCanvas(GLFWLinuxCanvas)
+            GLFWLinuxCanvas
         end
     else
         @error "Couldn't create canvas"
+        ErrorCanvas
     end
+    return canv == ErrorCanvas ? canv : defaultCanvas(canv, size)
 end
 
-
-end # module WGPUCanvas
+end

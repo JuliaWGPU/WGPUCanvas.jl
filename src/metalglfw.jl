@@ -55,7 +55,7 @@ mutable struct GLFWMacCanvas <: AbstractWGPUCanvas
 end
 
 
-function defaultCanvas(::Type{GLFWMacCanvas}; size = (500, 500))
+function defaultCanvas(::Type{GLFWMacCanvas}, size::Tuple{Int, Int})
     windowRef = Ref{GLFW.Window}()
     surfaceRef = Ref{WGPUSurface}()
     title = "GLFW WGPU Window"

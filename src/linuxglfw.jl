@@ -32,7 +32,7 @@ mutable struct GLFWLinuxCanvas <: AbstractWGPUCanvas
 end
 
 
-function defaultCanvas(::Type{GLFWLinuxCanvas}; windowSize = (500, 500))
+function defaultCanvas(::Type{GLFWLinuxCanvas}, size::Tuple{Int, Int})
 	displayRef = Ref{Ptr{GLFW.Window}}()
 	windowRef = Ref{GLFW.Window}()
     windowX11Ref = Ref{GLFW.Window}()
@@ -41,7 +41,7 @@ function defaultCanvas(::Type{GLFWLinuxCanvas}; windowSize = (500, 500))
     displayRef[] = GetX11Display()
     GLFW.Init()
     GLFW.WindowHint(GLFW.CLIENT_API, GLFW.NO_API)
-    windowRef[] = window = GLFW.CreateWindow(windowSize..., title)
+    windowRef[] = window = GLFW.CreateWindow(size..., title)
 	windowX11Ref[] = GetX11Window(window)
 	chain = cStruct(
 	    WGPUChainedStruct;
@@ -66,7 +66,7 @@ function defaultCanvas(::Type{GLFWLinuxCanvas}; windowSize = (500, 500))
     title = "GLFW Window"
     canvas = GLFWLinuxCanvas(
         title,
-        windowSize,
+        size,
         displayRef,
         windowRef,
         windowX11Ref,

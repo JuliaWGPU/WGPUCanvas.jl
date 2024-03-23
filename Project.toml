@@ -1,7 +1,7 @@
 name = "WGPUCanvas"
 uuid = "edfb154a-8991-4155-9628-fd26c9c32bf2"
 authors = ["Arhik <arhik23@gmail.com>"]
-version = "0.1.1"
+version = "0.1.2"
 
 [deps]
 GLFW = "f7f18e0c-5ee9-5ccd-a5bf-e8befd85ed98"
